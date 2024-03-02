@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
+const path = require('path');
 const { promises: fsPromises } = require('fs');
 
-const userDataPath = path.join(__dirname, 'cache', 'userData.json');
+const jsonBinUrl = 'https://api.jsonbin.io/b/65e33b4c266cfc3fde9228b6'; // Replace <YOUR_JSON_BIN_ID> with your JSON Bin ID
+const jsonBinHeaders = { 'Content-Type': 'application/json', 'secret-key': '$2a$10$YsAY2KOYAVCm4GDQ9uVGI..Xb8hyRI2Jzg15thwTJvY39NpB7Cvtm' }; // Replace <YOUR_JSON_BIN_SECRET_KEY> with your JSON Bin secret key
 
 async function getUserName(api, senderID) {
   try {
@@ -16,9 +16,7 @@ async function getUserName(api, senderID) {
 }
 
 async function updateRankApi(senderID, name, currentExp, level) {
-  
   const requiredXp = Math.floor(1000 * Math.pow(level, 2));
-
   const rankApiUrl = `https://rank2api-5faa0e644e2f.herokuapp.com/rankCard?name=${encodeURIComponent(name)}&level=Level${level}&color=auto&facebookSenderId=${senderID}&progress=69&rank=1&currentXp=${currentExp}&requiredXp=${requiredXp}&showXp=true`;
 
   try {
@@ -31,6 +29,24 @@ async function updateRankApi(senderID, name, currentExp, level) {
   } catch (error) {
     console.error('Error updating Rank API:', error.message);
     return null;
+  }
+}
+
+async function getUserDataFromJsonBin() {
+  try {
+    const response = await axios.get(jsonBinUrl, { headers: jsonBinHeaders });
+    return response.data || {};
+  } catch (error) {
+    console.error('Error fetching user data from JSON Bin:', error.message);
+    return {};
+  }
+}
+
+async function saveUserDataToJsonBin(userData) {
+  try {
+    await axios.put(jsonBinUrl, userData, { headers: jsonBinHeaders });
+  } catch (error) {
+    console.error('Error saving user data to JSON Bin:', error.message);
   }
 }
 
@@ -47,12 +63,13 @@ module.exports.config = {
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-  let userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+  let userData = await getUserDataFromJsonBin();
   const userId = event.senderID;
 
   if (userData[userId]) {
     userData[userId].exp = (userData[userId].exp || 0) + 10;
     const expNeeded = Math.floor(5 * Math.pow(userData[userId].level || 1, 2));
+    
     if (userData[userId].exp >= expNeeded) {
       userData[userId].level += 1;
       userData[userId].exp -= expNeeded;
@@ -74,7 +91,7 @@ module.exports.handleEvent = async function ({ api, event }) {
     userData[userId] = { exp: 1, level: 1 };
   }
 
-  fs.writeFileSync(userDataPath, JSON.stringify(userData, null, 2));
+  await saveUserDataToJsonBin(userData);
 }
 
 module.exports.run = async function ({ api, event }) {
