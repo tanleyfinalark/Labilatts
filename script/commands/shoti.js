@@ -27,7 +27,7 @@ api.sendTypingIndicator(event.threadID, true);
     }
 
  try {
-  const response = await axios.post(`https://your-shoti-api.vercel.app/api/v1/get`, { apikey: `$shoti-1hnv8pjf0hrgqqhe71o` });
+  const response = await axios.post(`https://shoti-server-v2.onrender.com/api/v1/get`, { apikey: `$shoti-1hnv8pjf0hrgqqhe71o` });
 
   const path = __dirname + `/cache/shoti.mp4`;
   const file = fs.createWriteStream(path);
