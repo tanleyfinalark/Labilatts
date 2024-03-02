@@ -6,7 +6,7 @@ module.exports.config = {
   hasPermssion: 0,
   credits: "Jonell Magallanes", // Credits for the API KENLIEPLAYS
   description: "chat with bot",//powered by simini command
-  usePrefix: false,
+  usePrefix: true,
   commandCategory: "chat",
   usages: "bot [your message]",
   cooldowns: 10
