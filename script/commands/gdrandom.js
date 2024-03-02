@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require("fs");
 
-module.exports = {
+module.exports.config = {
   name: "gd",
   version: "1.0.0",
   hasPermission: 0,
@@ -9,6 +9,7 @@ module.exports = {
   description: "Random Geometry Dash from TikTok",
   usePrefix: true,
   commandCategory: "media",
+  usages: "",
   cooldowns: 20,
 };
   module.exports.run = async function({ api, event }) {
