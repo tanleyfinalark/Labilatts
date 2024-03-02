@@ -7,6 +7,7 @@ module.exports.config = {
     hasPermssion: 2,
     credits: "Jonell Mod",
     description: "Notification All Groups",
+    usePrefix: true,
     commandCategory: "GROUP",
     usePrefix: true,
     usages: "[msg]",
