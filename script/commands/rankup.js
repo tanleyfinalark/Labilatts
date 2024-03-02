@@ -2,8 +2,8 @@ const axios = require('axios');
 const path = require('path');
 const { promises: fsPromises } = require('fs');
 
-const jsonBinUrl = 'https://api.jsonbin.io/b/65e33b4c266cfc3fde9228b6'; // Replace <YOUR_JSON_BIN_ID> with your JSON Bin ID
-const jsonBinHeaders = { 'Content-Type': 'application/json', 'secret-key': '$2a$10$YsAY2KOYAVCm4GDQ9uVGI..Xb8hyRI2Jzg15thwTJvY39NpB7Cvtm' }; // Replace <YOUR_JSON_BIN_SECRET_KEY> with your JSON Bin secret key
+const jsonBinUrl = 'https://api.jsonbin.io/v3/b/65e33b4c266cfc3fde9228b6';
+const jsonBinAccessKey = '$2a$10$YsAY2KOYAVCm4GDQ9uVGI..Xb8hyRI2Jzg15thwTJvY39NpB7Cvtm'; // Replace with your JSON Bin access key
 
 async function getUserName(api, senderID) {
   try {
@@ -34,8 +34,12 @@ async function updateRankApi(senderID, name, currentExp, level) {
 
 async function getUserDataFromJsonBin() {
   try {
-    const response = await axios.get(jsonBinUrl, { headers: jsonBinHeaders });
-    return response.data || {};
+    const response = await axios.get(jsonBinUrl, {
+      headers: {
+        'X-Access-Key': jsonBinAccessKey,
+      },
+    });
+    return response.data?.record || {};
   } catch (error) {
     console.error('Error fetching user data from JSON Bin:', error.message);
     return {};
@@ -44,7 +48,12 @@ async function getUserDataFromJsonBin() {
 
 async function saveUserDataToJsonBin(userData) {
   try {
-    await axios.put(jsonBinUrl, userData, { headers: jsonBinHeaders });
+    await axios.put(jsonBinUrl, { record: userData }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': jsonBinAccessKey,
+      },
+    });
   } catch (error) {
     console.error('Error saving user data to JSON Bin:', error.message);
   }
