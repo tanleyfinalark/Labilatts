@@ -2,9 +2,9 @@
     "language": "en",
     "keyActive": "",
     "DeveloperMode": false,
-    "autoCreateDB": false,
+    "autoCreateDB": true,
     "allowInbox": true,
-    "autoClean": false,
+    "autoClean": true,
     "adminOnly": false,
     "keyAdminOnly": "",
     "commandDisabled": [
@@ -24,8 +24,8 @@
     "FCA": "fca-project-orion",
     "PASSWORD": "",
     "OTPKEY": "",
-    "BOTNAME": "George Beard",
-    "PREFIX": "/",
+    "BOTNAME": "HAROLD HUTCHINS",
+    "PREFIX": "?",
     "ADMINBOT": [
         "100036956043695",
         "",
