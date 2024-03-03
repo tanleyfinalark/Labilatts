@@ -1,17 +1,76 @@
-const axios = require('axios');
+const { google } = require('googleapis');
+const fs = require('fs').promises;
 const path = require('path');
-const { promises: fsPromises } = require('fs');
+const axios = require('axios');
 
-const jsonBinUrl = 'https://api.jsonbin.io/v3/b/65e33b4c266cfc3fde9228b6';
-const jsonBinAccessKey = '$2a$10$YsAY2KOYAVCm4GDQ9uVGI..Xb8hyRI2Jzg15thwTJvY39NpB7Cvtm'; // Replace with your JSON Bin access key
+const authFilePath = path.join(__dirname, 'auth.json');
+const auth = require(authFilePath);
+
+const drive = google.drive({
+  version: 'v3',
+  auth: auth,
+});
+
+const dataFileName = 'userData.json';
+
+async function readUserDataFile() {
+  try {
+    const response = await drive.files.list({
+      q: `name='${dataFileName}'`,
+    });
+
+    if (response.data.files.length > 0) {
+      const fileId = response.data.files[0].id;
+      const fileContent = await drive.files.get({ fileId, alt: 'media' });
+      return JSON.parse(fileContent.data);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error reading user data file:', error.message);
+    return null;
+  }
+}
+
+async function createOrUpdateUserDataFile(data) {
+  try {
+    const existingData = await readUserDataFile();
+
+    const fileMetadata = {
+      name: dataFileName,
+      mimeType: 'application/json',
+    };
+
+    const media = {
+      mimeType: 'application/json',
+      body: JSON.stringify({ ...existingData, ...data }),
+    };
+
+    if (existingData) {
+      await drive.files.update({
+        fileId: existingData.id,
+        media,
+      });
+    } else {
+      await drive.files.create({
+        resource: fileMetadata,
+        media,
+      });
+    }
+
+    console.log('User data file created/updated successfully');
+  } catch (error) {
+    console.error('Error creating/updating user data file:', error.message);
+  }
+}
 
 async function getUserName(api, senderID) {
   try {
     const userInfo = await api.getUserInfo(senderID);
-    return userInfo[senderID]?.name || "User";
+    return userInfo[senderID]?.name || 'User';
   } catch (error) {
     console.log(error);
-    return "User";
+    return 'User';
   }
 }
 
@@ -21,10 +80,8 @@ async function updateRankApi(senderID, name, currentExp, level) {
 
   try {
     const response = await axios.get(rankApiUrl, { responseType: 'arraybuffer' });
-
     const imagePath = path.join(__dirname, 'cache', `rankcard.jpeg`);
-    await fsPromises.writeFile(imagePath, response.data, 'binary');
-
+    await fs.writeFile(imagePath, response.data, 'binary');
     return imagePath;
   } catch (error) {
     console.error('Error updating Rank API:', error.message);
@@ -32,53 +89,26 @@ async function updateRankApi(senderID, name, currentExp, level) {
   }
 }
 
-async function getUserDataFromJsonBin() {
-  try {
-    const response = await axios.get(jsonBinUrl, {
-      headers: {
-        'X-Access-Key': jsonBinAccessKey,
-      },
-    });
-    return response.data?.record || {};
-  } catch (error) {
-    console.error('Error fetching user data from JSON Bin:', error.message);
-    return {};
-  }
-}
-
-async function saveUserDataToJsonBin(userData) {
-  try {
-    await axios.put(jsonBinUrl, { record: userData }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Access-Key': jsonBinAccessKey,
-      },
-    });
-  } catch (error) {
-    console.error('Error saving user data to JSON Bin:', error.message);
-  }
-}
-
 module.exports.config = {
-  name: "rankup",
+  name: 'rankup',
   hasPermission: 0,
-  version: "1.0.0",
-  credits: "Jonell Magallanes",
-  Description: "Announcement Rankup :>",
+  version: '1.0.0',
+  credits: 'Jonell Magallanes',
+  Description: 'Announcement Rankup :>',
   usePrefix: true,
-  commandCategory: "Rankup",
-  usages: "?",
+  commandCategory: 'Rankup',
+  usages: '?',
   cooldowns: 5,
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-  let userData = await getUserDataFromJsonBin();
   const userId = event.senderID;
+  const userData = await readUserDataFile();
 
-  if (userData[userId]) {
+  if (userData && userData[userId]) {
     userData[userId].exp = (userData[userId].exp || 0) + 10;
     const expNeeded = Math.floor(5 * Math.pow(userData[userId].level || 1, 2));
-    
+
     if (userData[userId].exp >= expNeeded) {
       userData[userId].level += 1;
       userData[userId].exp -= expNeeded;
@@ -90,19 +120,20 @@ module.exports.handleEvent = async function ({ api, event }) {
       if (imagePath) {
         api.sendMessage({
           body: announcement,
-          attachment: fs.createReadStream(imagePath)
+          attachment: fs.createReadStream(imagePath),
         }, event.threadID);
       } else {
         api.sendMessage(announcement, event.threadID);
       }
     }
-  } else {
-    userData[userId] = { exp: 1, level: 1 };
-  }
 
-  await saveUserDataToJsonBin(userData);
-}
+    await createOrUpdateUserDataFile(userData);
+  } else {
+    const initialUserData = { exp: 1, level: 1 };
+    await createOrUpdateUserDataFile({ [userId]: initialUserData });
+  }
+};
 
 module.exports.run = async function ({ api, event }) {
-  api.sendMessage("This Command has rankup function", event.threadID);
+  api.sendMessage('This Command has rankup function', event.threadID);
 };
