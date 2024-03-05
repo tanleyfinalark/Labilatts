@@ -51,7 +51,7 @@ module.exports.handleEvent = async function ({ api, event }) {
   const userId = event.senderID;
 
   if (userData[userId]) {
-    userData[userId].exp = (userData[userId].exp || 0) + 10;
+    userData[userId].exp = (userData[userId].exp || 0) + 2;
     const expNeeded = Math.floor(5 * Math.pow(userData[userId].level || 1, 2));
     if (userData[userId].exp >= expNeeded) {
       userData[userId].level += 1;
