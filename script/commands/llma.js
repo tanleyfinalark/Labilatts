@@ -17,7 +17,7 @@ module.exports.config = {
 
 module.exports.run = async function ({ api, event, args }) {
     const content = encodeURIComponent(args.join(" "));
-    const apiUrl = `https://llmaaiviafastapibyjonellmagallanes.replit.app/meta?prompt=${content}`;
+    const apiUrl = `https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/meta?inputText=${content}`;
     
     totalRequests++;
 
