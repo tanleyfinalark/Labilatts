@@ -48,6 +48,7 @@
     "youtube-search-api": "^1.1.0",
     "yt-search": "^2.10.4",
     "ytdl-core": "^4.11.5",
-    "g4f": "^1.4.2"
+    "g4f": "^1.4.2",
+    "@octokit/rest": "^20.0.2"
   }
 }
