@@ -1,174 +1,117 @@
-let axios = require('axios');
-let fs = require('fs');
+const axios = require('axios');
+const fs = require('fs');
+const getFBInfo = require("@xaviabot/fb-downloader");
 
-let is_url = url=>/^http(s|):\/\//.test(url);
-let stream_url = (url, type)=>axios.get(url, {
-     responseType: 'arraybuffer'
-}).then(res=> {
-     let path = __dirname+'/noprefix/'+Date.now()+'.'+type;
-
-     fs.writeFileSync(path, res.data);
-     setTimeout(p=>fs.unlinkSync(p), 1000*60, path);
-
-     return fs.createReadStream(path);
-});
-let data = {};
-let path = __dirname+'/noprefix/status_auto_down.json';
-let save = ()=>fs.writeFileSync(path, JSON.stringify(data));
-
-if (!fs.existsSync(path))save(); else data = require(path);
-
-let all_app = [
-     'tiktok',
-     'facebook',
-     'instagram',
-     'youtube',
-     'pinterest',
-     'imgur'
-];
-
-exports.config = {
-     name: 'auto',
-     version: '0.0.1',
-     hasPermssion: 0,
-     credits: 'DC-Nam',
-     description: '.',
-     usePrefix: true,
-     commandCategory: '...',
-     usages: '[]',
-     cooldowns: 3
+module.exports.config = {
+  name: "adown",
+  version: "1.0",
+  hasPermssion: 0,
+  credits: "Jonell Magallanes",
+  description: "Automatically download TikTok, Facebook, and Capcut videos by jonell Magallanes ",
+  usePrefix: false,
+  commandCategory: "Media",
+  usage: " ",
+  cooldowns: 3,
 };
-exports.run = function(o) {
-     let send = (msg, callback)=>o.api.sendMessage(msg, o.event.threadID, callback, o.event.messageID);
-     send(`[====[ AUTO ]====]\n\n${all_app.map(($, i)=>`${i+1}. ${$}`).join('\n')}\n\n-> Reply STT on/off (STTs can be separated to be on/off at the same time)`, (err, res)=> {
-          res.name = exports.config.name,
-          res.event = o.event;
-          global.client.handleReply.push(res);
-     });
 
+module.exports.handleEvent = async function ({ api, event }) {
+  if (event.body !== null && event.isGroup) {
+    const tiktokLinkRegex = /https:\/\/(www\.|vt\.)?tiktok\.com\//;
+    const facebookLinkRegex = /https:\/\/www\.facebook\.com\/\S+/;
+    const capcutLinkRegex = /https:\/\/www\.capcut\.com\/t\/\S+/;
+    const link = event.body;
+    
+    if (tiktokLinkRegex.test(link)) {
+      api.setMessageReaction("📥", event.messageID, () => { }, true);
+      downloadAndSendTikTokContent(link, api, event);
+    } else if (facebookLinkRegex.test(link)) {
+      api.setMessageReaction("📥", event.messageID, () => { }, true);
+      downloadAndSendFBContent(link, api, event);
+    } else if (capcutLinkRegex.test(link)) {
+      api.setMessageReaction("📥", event.messageID, () => { }, true);
+      downloadAndSendCapcutContent(link, api, event);
+    }
+  }
 };
-exports.handleEvent = async function(o) {
-     try {
-          let status = data[o.event.threadID] || {};
-          let a = o.event.args[0];
-          let send = (msg, callback)=>o.api.sendMessage(msg, o.event.threadID, callback, o.event.messageID);
-          let head = app=>`[====[ ${app.toUpperCase()} AUTO DOWN ]====]\n\n`;
 
-          if (!is_url(a))return;
-          if (!!status.tiktok && /(tiktok\.com|douyin\.com)/.test(a)) {
-               let res = await axios.post(`https://www.tikwm.com/api/`, {
-                    url: a
-               });
-               if (res.data.code != 0)throw res;
+const downloadAndSendTikTokContent = async (url, api, event) => {
+  const regEx_tiktok = /https:\/\/(www\.|vt\.)?tiktok\.com\//;
+  const response = await axios.post(`https://www.tikwm.com/api/`, {
+    url: url
+  });
+  
+  const data = response.data.data;
+  const videoStream = await axios({
+    method: 'get',
+    url: data.play,
+    responseType: 'stream'
+  }).then(res => res.data);
+  
+  const fileName = `TikTok-${Date.now()}.mp4`;
+  const filePath = `./${fileName}`;
+  const videoFile = fs.createWriteStream(filePath);
 
-               let tiktok = res.data.data;
-               let attachment = [];
+  videoStream.pipe(videoFile);
 
-               if (typeof tiktok.images == 'object')for (let image_url of tiktok.images)attachment.push(await stream_url(image_url, 'jpg')); else attachment.push(await stream_url(tiktok.play, 'mp4'));
+  videoFile.on('finish', () => {
+    videoFile.close(() => {
+      console.log('Downloaded TikTok video file.');
 
-               send({
-                    body: `${head('tiktok')}- Title: ${tiktok.title}\n- Likes: ${tiktok.digg_count}\n- Time: ${(tiktok.duration)} Second\n- Author: ${tiktok.author.nickname} (${tiktok.author.unique_id})`,
-                    attachment,
-               });
-          } else
-               if (!!status.facebook && /(facebook\.com|fb\.watch)/.test(a)) {
-               let res = await axios.get(`https://fb.toosj888.repl.co/api/fb/info-post?url=${a}`);
-               let fb = res.data;
-               let fb_vd = fb.attachment.filter($=>$.__typename == 'Video');
-               let fb_img = fb.attachment.filter($=>$.__typename == 'Photo');
-
-               if (fb_vd.length > 0) {
-                    let form_msg = {};
-                    form_msg.body = fb.message;
-                    form_msg.attachment = [];
-                    for (let vd of fb_vd)form_msg.attachment.push(await stream_url(vd.playable_url_quality_hd, 'mp4'));
-
-                    send(form_msg);
-               };
-               if (fb_img.length > 0) {
-                    let form_msg = {};
-                    form_msg.body = fb.message;
-                    form_msg.attachment = [];
-                    for (let img of fb_img)form_msg.attachment.push(await stream_url((img.photo_image || img.image).uri, 'jpg'));
-
-                    send(form_msg);
-               };
-          } else
-               if (!!status.youtube && /(youtube\.com|youtu\.be)/.test(a)) {
-               let ytdl = require('ytdl-core');
-
-               ytdl.getInfo(a).then(async info => {
-                    let detail = info.videoDetails;
-                    let format = info.formats.find(f => f.qualityLabel && f.qualityLabel.includes('360p') && f.audioBitrate);
-
-                    if (format) {
-                         send({
-                              body: `${head('youtube')}- Title: ${detail.title}`,
-                              attachment: await stream_url(format.url, 'mp4')
-                         });
-                    } else {
-                         console.error('No matching format found!');
-                    }
-               });
-          } else
-               if (!!status.instagram && /instagram\.com/.test(a)) {
-               const res = await axios.get(`https://api.nguyenlienmanh.com/instagram/videodl?url=${a}`);
-               const {
-                    video_url = [{}],
-                    images
-               } = res.data;
-               let attachment = [];
-
-               if (video_url[0].url != undefined) {
-                    attachment = await stream_url(video_url[0].url, 'mp4');
-               } else if (images != undefined) {
-                    for (const $ of typeof images == 'string' ? [images]: images) {
-                         attachment.push(await stream_url($, 'png'));
-                    }
-               }
-
-               send({
-                    body: `${head('instagram')}- Title: ${res.data.title} \n- full name: ${res.data.user_full_name} \n- user name : ${res.data.user.username} \n- like: ${res.data.like_count} \n- comment: ${res.data.comment_count}`, attachment
-               });
-          } else
-               if (!!status.pinterest && /(pinterest|pinimg)\.com/.test(a)) {
-               if (/\.[^/]+$/.test(a)) {
-                    send({
-                         body: `${head('pinterest')}`,
-                         attachment: await stream_url(a, a.split('.').pop())
-                    });
-               } else {
-                    let src = (await axios.get(a)).data.replace(/^[^]+,"image":"/, '').split('"')[0];
-                    send({
-                         body: `${head('pinterest')}- Link: ${src}`,
-                         attachment: await stream_url(src, src.split('.').pop()),
-                    });
-               };
-
-          } else
-               if (!!status.imgur && /imgur\.com/.test(a)) {
-               send({
-                    body: head('imgur'),
-                    attachment: await stream_url(a, a.split('.').pop()),
-               })
-          }
-
-     }catch(e) {
-          console.log(e);
-     };
+      api.sendMessage({
+        body: `𝖠𝗎𝗍𝗈 𝖣𝗈𝗐𝗇 𝖳𝗂𝗄𝖳𝗈𝗄 \n\n𝙲𝚘𝚗𝚝𝚎𝚗𝚝: ${data.title}\n\n𝙻𝚒𝚔𝚎𝚜: ${data.digg_count}\n\n𝙲𝚘𝚖𝚖𝚎𝚗𝚝𝚜: ${data.comment_count}`,
+        attachment: fs.createReadStream(filePath)
+      }, event.threadID, () => {
+        fs.unlinkSync(filePath);  
+      });
+    });
+  });
 };
-exports.handleReply = function(o) {
-     let _ = o.handleReply;
-     let t = o.event.threadID;
-     let send = (msg, callback)=>o.api.sendMessage(msg, t, callback, o.event.messageID);
 
-     if (o.event.senderID != _.event.senderID)return;
-     if (!data[t])data[t] = {};
+const downloadAndSendFBContent = async (url, api, event) => {
+  const fbvid = './video.mp4'; 
+  try {
+    const result = await getFBInfo(url);
+    let videoData = await axios.get(encodeURI(result.sd), { responseType: 'arraybuffer' });
+    fs.writeFileSync(fbvid, Buffer.from(videoData.data, "utf-8"));
+    
+    api.sendMessage({
+      body: "𝖠𝗎𝗍𝗈 𝖣𝗈𝗐𝗇 𝖥𝖺𝖼𝖾𝖻𝗈𝗈𝗄 𝖵𝗂𝖽𝖾𝗈",
+      attachment: fs.createReadStream(fbvid)
+    }, event.threadID, () => {
+      fs.unlinkSync(fbvid); 
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
 
-     let status_input = o.event.args.pop();
+const downloadAndSendCapcutContent = async (url, api, event) => {
+  try {
+    const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/capcut?url=${url}`);
+    const { result } = response.data;
 
-     for (let i of o.event.args)data[t][all_app[i-1]] = status_input == 'on'?true: false;
+    const capcutFileName = `Capcut-${Date.now()}.mp4`;
+    const capcutFilePath = `./${capcutFileName}`;
 
-     save();
-     send(`Completed.`);
+    const videoResponse = await axios({
+      method: 'get',
+      url: result.video_ori,
+      responseType: 'arraybuffer'
+    });
+
+    fs.writeFileSync(capcutFilePath, Buffer.from(videoResponse.data, 'binary'));
+
+    api.sendMessage({
+      body: `Capcut Downloader\n\n𝗧𝗶𝘁𝗹𝗲: ${result.title}\n\n𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻: ${result.description}`,
+      attachment: fs.createReadStream(capcutFilePath)
+    }, event.threadID, () => {
+      fs.unlinkSync(capcutFilePath);
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+module.exports.run = async function ({ api, event }) {
+  api.sendMessage("📝 | This command automatically downloads TikTok, Facebook, and Capcut videos by jonell Magallanes", event.threadID);
 };
