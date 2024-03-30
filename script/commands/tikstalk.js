@@ -1,44 +1,45 @@
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs-extra');
 
 module.exports.config = {
-    name: "tikstalk",
-    version: "1.0.0",
-    hasPermission: 0,
-    credits: "Jonell Magallanes",
-    description: "ikTok user information", //api by jonell Magallanes 
-    usePrefix: false,
-    commandCategory: "Media",
-    cooldowns: 10
+  name: "tikstalk",
+  version: "1.0.",
+  hasPermssion: 0,
+  credits: "Jonell Magallanes",
+  description: "TikTok user info"
+  commandCategory: "Media",
+  usePrefix: false,
+  usages: "[TikTok username]",
+  cooldowns: 2,
 };
 
-module.exports.run = async function ({ api, event, args }) {
-    const username = args[0];
+module.exports.run = async ({ api, event, args }) => {
+  const pathie = './cache/enhanced.jpg';
+  const { threadID, messageID } = event;
 
-    if (!username) {
-        return api.sendMessage("Please provide a TikTok username.", event.threadID);
-    }
+  const tiktokUsername = args.join(" ");
 
-    try {
-        const response = await axios.get(`https://jonellccapis-dbe67c18fbcf.herokuapp.com/api/tikstalk?unique_id=${username}`);
-        const userData = response.data;
+  try {
+    api.sendMessage("⏱️ | Fetching TikTok user info. Please Wait....", threadID, messageID);
 
-        const avatarURL = userData.avatarLarger;
-        const avatarFilename = path.basename(avatarURL);
-        const avatarPath = path.join(__dirname, 'avatars', avatarFilename);
+    const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/tikstalk?unique_id=${tiktokUsername}`);
+    const tiktokData = response.data;
 
-        const avatarResponse = await axios.get(avatarURL, { responseType: 'arraybuffer' });
-        fs.writeFileSync(avatarPath, Buffer.from(avatarResponse.data));
+    const imgResponse = await axios.get(tiktokData.avatarLarger, { responseType: "stream" });
 
-        const message = {
-            body: `👤 | TikTok User Information\n\nUsername: ${userData.username}\nLikes: ${userData.heartCount}\nFollowers: ${userData.followerCount}\nFollowing: ${userData.followingCount}\nBio: ${userData.signature}`,
-            attachment: fs.createReadStream(avatarPath)
-        };
-        return api.sendMessage(message, event.threadID);
+    const writeStream = fs.createWriteStream(pathie);
+    imgResponse.data.pipe(writeStream);
 
-    } catch (error) {
-        console.error(error);
-        return api.sendMessage("🚧 | Error fetching TikTok user information.", event.threadID);
-    }
+    writeStream.on('finish', () => {
+      const anonymizedSecUid = "secret ********"; // Anonymized secUid
+      const userInfo = `𝗜𝗗: ${tiktokData.id}\n𝗡𝗶𝗰𝗸𝗻𝗮𝗺𝗲: ${tiktokData.nickname}\n𝗨𝘀𝗲𝗿𝗻𝗮𝗺𝗲: ${tiktokData.username}\n𝗕𝗶𝗼: ${tiktokData.signature}\n𝗦𝗲𝗰𝗨𝗶𝗱: ${anonymizedSecUid}\n𝗥𝗲𝗹𝗮𝘁𝗶𝗼𝗻: ${tiktokData.relation}\n𝗩𝗶𝗱𝗲𝗼𝘀: ${tiktokData.videoCount}\n𝗙𝗼𝗹𝗹𝗼𝘄𝗶𝗻𝗴: ${tiktokData.followingCount}\n𝗙𝗼𝗹𝗹𝗼𝘄𝗲𝗿𝘀: ${tiktokData.followerCount}\n𝗟𝗶𝗸𝗲𝘀: ${tiktokData.heartCount}\n𝗗𝗶𝗴 𝗖𝗼𝘂𝗻𝘁: ${tiktokData.diggCount}`;
+
+      api.sendMessage({
+        body: `👤 | 𝗧𝗶𝗸𝘁𝗼𝗸 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻 𝗨𝘀𝗲𝗿\n\n${userInfo}`,
+        attachment: fs.createReadStream(pathie)
+      }, threadID, () => fs.unlinkSync(pathie), messageID);
+    });
+  } catch (error) {
+    api.sendMessage(`❎ | Error fetching TikTok user info: ${error}`, threadID, messageID);
+  }
 };
