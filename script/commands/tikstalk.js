@@ -6,7 +6,7 @@ module.exports.config = {
   version: "1.0.",
   hasPermssion: 0,
   credits: "Jonell Magallanes",
-  description: "TikTok user info"
+  description: "TikTok user info",
   commandCategory: "Media",
   usePrefix: false,
   usages: "[TikTok username]",
