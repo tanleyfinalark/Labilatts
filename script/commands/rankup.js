@@ -19,7 +19,7 @@ async function updateRankApi(senderID, name, currentExp, level) {
   
   const requiredXp = Math.floor(1000 * Math.pow(level, 2));
 
-  const rankApiUrl = `https://rank2api-5faa0e644e2f.herokuapp.com/rankCard?name=${encodeURIComponent(name)}&level=Level${level}&color=auto&facebookSenderId=${senderID}&progress=69&rank=1&currentXp=${currentExp}&requiredXp=${requiredXp}&showXp=true`;
+  const rankApiUrl = `https://rankupbyjonellv2-5fb030af5c27.herokuapp.com/rankCard?name=${encodeURIComponent(name)}&level=Level${level}&color=auto&facebookSenderId=${senderID}&progress=69&rank=1&currentXp=${currentExp}&requiredXp=${requiredXp}&showXp=true`;
 
   try {
     const response = await axios.get(rankApiUrl, { responseType: 'arraybuffer' });
