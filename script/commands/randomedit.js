@@ -14,7 +14,7 @@ module.exports.config = {
   module.exports.run = async function({ api, event }) {
     api.sendMessage("⏱️ | Sending Random edit Just Please wait...", event.threadID, event.messageID);
     api.setMessageReaction("⏱️", event.messageID, () => {}, true);
-    const response = await axios.get('https://jonellccapis-dbe67c18fbcf.herokuapp.com/api/edit', {
+    const response = await axios.get('https://jonellccapisprojectv2-a62001f39859.herokuapp.com/api/edit', {
       responseType: 'arraybuffer'
     }).catch(error => {
       api.sendMessage("Error fetching video.", event.threadID, event.messageID);
