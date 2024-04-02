@@ -22,7 +22,7 @@ module.exports.run = async ({ api, event, args }) => {
   try {
     api.sendMessage("⏱️ | Fetching TikTok user info. Please Wait....", threadID, messageID);
 
-    const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/tikstalk?unique_id=${tiktokUsername}`);
+    const response = await axios.get(`https://jonellccapisprojectv2-a62001f39859.herokuapp.com/api/tikstalk?unique_id=${tiktokUsername}`);
     const tiktokData = response.data;
 
     const imgResponse = await axios.get(tiktokData.avatarLarger, { responseType: "stream" });
