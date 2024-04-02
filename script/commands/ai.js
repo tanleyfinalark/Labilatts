@@ -2,101 +2,105 @@ const axios = require('axios');
 const fs = require('fs').promises;
 
 const storageFile = 'user_data.json';
-const chatRecordFile = 'chat_records.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://hiro-api.replit.app/ai/hercai';
-const backupApiUrl = 'https://jonellccapis-dbe67c18fbcf.herokuapp.com/api/globalgpt';
+const primaryApiUrl = 'https://jonellccprojectapis.onrender.com/api/gptconvo';
+const backupApiUrl = 'https://jonellccprojectapis.onrender.com/api/v2/ai';
 
 let isPrimaryApiStable = true;
-let axiosSwitchedMessageSent = false;
 
-module.exports.config = {
-    name: "ai",
-    version: "1.0.0",
-    hasPermssion: 0,
-    credits: "Jonell Magallanes",
-    description: "EDUCATIONAL",
-    usePrefix: false,
-    commandCategory: "other",
-    usages: "[question]",
-    cooldowns: 10
-};
+module.exports = {
+    config: {
+        name: "ai",
+        version: "1.0.0",
+        hasPermssion: 0,
+        credits: "Jonell Magallanes",
+        description: "EDUCATIONAL",
+        usePrefix: false,
+        commandCategory: "other",
+        usages: "[question]",
+        cooldowns: 10
+    },
 
-module.exports.run = async function ({ api, event, args }) {
-    const content = encodeURIComponent(args.join(" "));
-    const uid = event.senderID;
+    run: async function ({ api, event, args }) {
+        const content = encodeURIComponent(args.join(" "));
+        const uid = event.senderID;
 
-    const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?ask=${content}` : `${backupApiUrl}?content=${content}`;
-    const apiName = isPrimaryApiStable ? 'Original Axios' : 'Backup Axios';
+        let apiUrl, apiName;
 
-    if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
-
-    try {
-        api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
-
-        const response = await axios.get(apiUrl);
-        const result = response.data.reply;
-
-        if (result === undefined) {
-            throw new Error("Axios response is undefined");
+        if (isPrimaryApiStable) {
+            apiUrl = `${primaryApiUrl}?ask=${content}&id=${uid}`;
+            apiName = 'Primary Axios';
+        } else {
+            apiUrl = `${backupApiUrl}?ask=${content}`;
+            apiName = 'Backup Axios';
         }
 
-        const userData = await getUserData(uid);
-        userData.requestCount = (userData.requestCount || 0) + 1;
-        userData.responses = userData.responses || [];
-        userData.responses.push({ question: content, response: result });
-        await saveUserData(uid, userData, apiName);
-
-        recordChat(uid, content);
-
-        const totalRequestCount = await getTotalRequestCount();
-        const userNames = await getUserNames(api, uid);
-
-        const responseMessage = `${result}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
-        api.sendMessage(responseMessage, event.threadID, event.messageID);
-
-        await saveAxiosStatus(apiName);
-
-        if (apiName !== 'Original Axios' && !axiosSwitchedMessageSent) {
-            isPrimaryApiStable = true;
-            axiosSwitchedMessageSent = true;
-            api.sendMessage("🔃 | Switching back to the original Axios. Just please wait.", event.threadID);
-        }
-
-    } catch (error) {
-        console.error(error);
+        if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
 
         try {
-            api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
-            const backupResponse = await axios.get(`${backupApiUrl}?content=${content}`);
-            const backupResult = backupResponse.data.content;
+            api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
-            if (backupResult === undefined) {
-                throw new Error("Backup Axios response is undefined");
+            const response = await axios.get(apiUrl);
+            const result = isPrimaryApiStable ? response.data.response : response.data.message;
+
+            if (!result) {
+                throw new Error("Axios response is undefined");
             }
 
             const userData = await getUserData(uid);
             userData.requestCount = (userData.requestCount || 0) + 1;
             userData.responses = userData.responses || [];
-            userData.responses.push({ question: content, response: backupResult });
-            await saveUserData(uid, userData, 'Backup Axios');
+            userData.responses.push({ question: content, response: result });
+            await saveUserData(uid, userData, apiName);
 
             const totalRequestCount = await getTotalRequestCount();
             const userNames = await getUserNames(api, uid);
 
-            const responseMessage = `${backupResult}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
+            const responseMessage = `${result}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
             api.sendMessage(responseMessage, event.threadID, event.messageID);
 
-            isPrimaryApiStable = false;
+            await saveAxiosStatus(apiName);
 
-            await saveAxiosStatus('Backup Axios');
+            if (!isPrimaryApiStable) {
+                isPrimaryApiStable = true;
+                api.sendMessage("🔃 | Switching back to the primary Axios. Just please wait.", event.threadID);
+            }
 
-        } catch (backupError) {
-            console.error(backupError);
-            api.sendMessage("An error occurred while processing your request.", event.threadID);
+        } catch (error) {
+            console.error(error);
 
-            await saveAxiosStatus('Unknown');
+            try {
+                api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
+                const backupResponse = await axios.get(`${backupApiUrl}?ask=${content}`);
+                const backupResult = backupResponse.data.message;
+
+                if (!backupResult) {
+                    throw new Error("Backup Axios response is undefined");
+                }
+
+                const userData = await getUserData(uid);
+                userData.requestCount = (userData.requestCount || 0) + 1;
+                userData.responses = userData.responses || [];
+                userData.responses.push({ question: content, response: backupResult });
+                await saveUserData(uid, userData, 'Backup Axios');
+
+                const totalRequestCount = await getTotalRequestCount();
+                const userNames = await getUserNames(api, uid);
+
+                const responseMessage = `${backupResult}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
+                api.sendMessage(responseMessage, event.threadID, event.messageID);
+
+                isPrimaryApiStable = false;
+
+                await saveAxiosStatus('Backup Axios');
+
+            } catch (backupError) {
+                console.error(backupError);
+                api.sendMessage("An error occurred while processing your request.", event.threadID);
+
+                await saveAxiosStatus('Unknown');
+            }
         }
     }
 };
@@ -145,27 +149,6 @@ async function getUserNames(api, uid) {
 async function getAllUserData() {
     try {
         const data = await fs.readFile(storageFile, 'utf-8');
-        return JSON.parse(data) || {};
-    } catch (error) {
-        return {};
-    }
-}
-
-function recordChat(uid, question) {
-    try {
-        const chatRecords = getChatRecords();
-        const userChat = chatRecords[uid] || [];
-        userChat.push({ timestamp: Date.now(), question });
-        chatRecords[uid] = userChat;
-        fs.writeFile(chatRecordFile, JSON.stringify(chatRecords, null, 2), 'utf-8');
-    } catch (error) {
-        console.error('Error recording chat:', error);
-    }
-}
-
-function getChatRecords() {
-    try {
-        const data = fs.readFileSync(chatRecordFile, 'utf-8');
         return JSON.parse(data) || {};
     } catch (error) {
         return {};
