@@ -22,7 +22,7 @@ module.exports.run = async ({ api, event, args }) => {
   try {
     api.sendMessage("⏱️ | Your Photo is Enhancing. Please Wait....", threadID, messageID);
 
-    const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/remini?imageUrl=${encodeURIComponent(james)}`);
+    const response = await axios.get(`https://jonellccapisprojectv2-a62001f39859.herokuapp.com/api/remini?imageUrl=${encodeURIComponent(james)}`);
     const processedImageURL = response.data.image_data;
 
     const imgResponse = await axios.get(processedImageURL, { responseType: "stream" });
