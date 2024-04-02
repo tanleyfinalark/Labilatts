@@ -14,7 +14,7 @@ module.exports.config = {
 
 module.exports.handleEvent = async function ({ api, event }) {
   if (event.body !== null && event.isGroup) {
-    axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/text?emoji=${encodeURIComponent(event.body)}`)
+    axios.get(`https://jonellccapisprojectv2-a62001f39859.herokuapp.com/api/text?content=${encodeURIComponent(event.body)}`)
       .then(response => {
         const emoji = response.data.response;
         api.setMessageReaction(emoji, event.messageID, () => { }, true);
