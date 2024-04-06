@@ -17,7 +17,7 @@ module.exports.run = async function ({ api, event, args }) {
     
     if (!content) return api.sendMessage("Please provide a valid IP address.\n\nExample: iplocator 111.90.225.96", event.threadID, event.messageID);
 
-    const apiUrl = `https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/ip?ipnum=${content}`;
+    const apiUrl = `https://jonellccapisprojectv2-a62001f39859.herokuapp.com/api/ip?ipnum=${content}`;
 
     try {
         api.sendMessage("🔍 | Locating IP address. Please wait...", event.threadID, event.messageID);
