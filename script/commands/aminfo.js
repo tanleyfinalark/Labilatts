@@ -16,7 +16,7 @@ module.exports.config = {
 
 module.exports.handleEvent = async function ({ api, event }) {
   if (event.body !== null && event.isGroup) {
-    const linkMatch = event.body.match(/http:\/\/alight\.link\/([a-zA-Z0-9]+)/);
+    const linkMatch = event.body.match(/https?:\/\/alight\.link\/([a-zA-Z0-9]+)/);
     
     if (linkMatch) {
       const link = linkMatch[0];
