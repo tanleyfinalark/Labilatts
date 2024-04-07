@@ -1,5 +1,5 @@
 module.exports.config = {
-  name: "harold",
+  name: "midoriya",
   version: "1.0.0",
   hasPermssion: 0,
   description: "Harold bot that can download facebook videos, sing, search image, search lyrics and more..",
