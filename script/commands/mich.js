@@ -1,6 +1,13 @@
 const axios = require('axios');
+const fs = require('fs');
 
-let chatEnabled = true;
+let chatEnabled = false;
+
+if (fs.existsSync('./chatbotStatus.json')) {
+    const rawData = fs.readFileSync('./chatbotStatus.json');
+    const jsonData = JSON.parse(rawData);
+    chatEnabled = jsonData.chatEnabled;
+}
 
 module.exports.config = {
     name: "mich",
@@ -14,31 +21,35 @@ module.exports.config = {
     cooldowns: 3
 };
 
+function saveStatus() {
+    const jsonData = { chatEnabled };
+    fs.writeFileSync('./chatbotStatus.json', JSON.stringify(jsonData, null, 2));
+}
+
 module.exports.run = async function ({ api, event, args }) {
     const command = args[0];
     
     if (command === 'on') {
         chatEnabled = true;
+        saveStatus();
         return api.sendMessage("Chatbot is now ON", event.threadID, event.messageID);
     }
 
     if (command === 'off') {
         chatEnabled = false;
+        saveStatus();
         return api.sendMessage("Chatbot is now OFF", event.threadID, event.messageID);
     }
 
     if (!chatEnabled) return; 
 
     const content = encodeURIComponent(args.join(" "));
-    const id = event.senderID;  
-    let apiUrl;
+    const id = event.senderID;
 
     if (!content) return api.sendMessage("Hello There I'm Mich Chatbot made by Jonell Magallanes Haha", event.threadID, event.messageID);
     
-    apiUrl = `https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`;
-
     try {
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(`https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`);
         const { response: reply } = response.data;  
         api.sendMessage(reply, event.threadID);
     } catch (error) {
@@ -51,13 +62,10 @@ module.exports.handleEvent = async function ({ api, event }) {
     if (!chatEnabled || event.body === null || !event.isGroup) return;
 
     const content = encodeURIComponent(event.body);
-    const id = event.senderID;  
-    let apiUrl;
-
-    apiUrl = `https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`;
+    const id = event.senderID;
 
     try {
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(`https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`);
         const { response: reply } = response.data;  
         api.sendMessage(reply, event.threadID);
     } catch (error) {
