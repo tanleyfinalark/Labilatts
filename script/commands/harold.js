@@ -1,9 +1,9 @@
 const axios = require('axios');
 const fs = require('fs');
 
-let chatEnabled = true; // Switch to control chatbot on/off
+let chatEnabled = false; 
 
-// Load chatbot status from JSON file
+
 if (fs.existsSync('./chatbotStatus.json')) {
     const rawData = fs.readFileSync('./chatbotStatus.json');
     const jsonData = JSON.parse(rawData);
@@ -22,7 +22,7 @@ module.exports.config = {
     cooldowns: 3
 };
 
-// Save chatbot status to JSON file
+
 function saveStatus() {
     const jsonData = { chatEnabled };
     fs.writeFileSync('./chatbotStatus.json', JSON.stringify(jsonData, null, 2));
@@ -34,16 +34,16 @@ module.exports.run = async function ({ api, event, args }) {
     if (command === 'on') {
         chatEnabled = true;
         saveStatus();
-        return api.sendMessage("Chatbot is now ON", event.threadID, event.messageID);
+        return api.sendMessage("Harold is now ON", event.threadID, event.messageID);
     }
 
     if (command === 'off') {
         chatEnabled = false;
         saveStatus();
-        return api.sendMessage("Chatbot is now OFF", event.threadID, event.messageID);
+        return api.sendMessage("Harold is now OFF", event.threadID, event.messageID);
     }
 
-    if (!chatEnabled) return; // Check if chatbot is enabled
+    if (!chatEnabled) return; 
 
     const content = encodeURIComponent(args.join(" "));
     const id = event.senderID;  
@@ -64,7 +64,7 @@ module.exports.run = async function ({ api, event, args }) {
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    if (!chatEnabled || !event.body || !event.isGroup) return; // Check if chatbot is enabled and if the event is valid
+    if (!chatEnabled || !event.body || !event.isGroup) return; 
 
     const content = encodeURIComponent(event.body);
     const id = event.senderID;  
