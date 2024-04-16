@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-let chatEnabled = true; 
+let chatEnabled = true; // Switch to control chatbot on/off
 
 module.exports.config = {
     name: "harold",
@@ -19,15 +19,15 @@ module.exports.run = async function ({ api, event, args }) {
     
     if (command === 'on') {
         chatEnabled = true;
-        return api.sendMessage("Harold is now ON", event.threadID, event.messageID);
+        return api.sendMessage("Chatbot is now ON", event.threadID, event.messageID);
     }
 
     if (command === 'off') {
         chatEnabled = false;
-        return api.sendMessage("Harold is now OFF", event.threadID, event.messageID);
+        return api.sendMessage("Chatbot is now OFF", event.threadID, event.messageID);
     }
 
-    if (!chatEnabled) return; 
+    if (!chatEnabled) return; // Check if chatbot is enabled
 
     const content = encodeURIComponent(args.join(" "));
     const id = event.senderID;  
@@ -51,7 +51,7 @@ module.exports.run = async function ({ api, event, args }) {
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    if (!chatEnabled) return; 
+    if (!chatEnabled) return; // Check if chatbot is enabled
 
     if (event.body !== null && event.isGroup) {
         const content = encodeURIComponent(event.body);
