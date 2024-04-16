@@ -3,7 +3,7 @@ const fs = require('fs');
 
 let chatEnabled = {};
 
-if (fs.existsSync('./chatbotStatus.json')) {
+if (fs.existsSync('./chatbotStatusMich.json')) {
     const rawData = fs.readFileSync('./chatbotStatusMich.json');
     chatEnabled = JSON.parse(rawData);
 }
@@ -49,7 +49,7 @@ module.exports.run = async function ({ api, event, args }) {
     try {
         const response = await axios.get(`https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`);
         const { response: reply } = response.data;  
-        api.sendMessage(reply, event.threadID);
+        api.sendMessage(reply, event.threadID, event.messageID);
     } catch (error) {
         console.error(error);
         api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
@@ -65,7 +65,7 @@ module.exports.handleEvent = async function ({ api, event }) {
     try {
         const response = await axios.get(`https://michai-ec9807495fa2.herokuapp.com/mich?ask=${content}&id=${id}`);
         const { response: reply } = response.data;  
-        api.sendMessage(reply, event.threadID);
+        api.sendMessage(reply, event.threadID, event.messageID);
     } catch (error) {
         console.error(error);
         api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
