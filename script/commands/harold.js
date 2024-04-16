@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-let chatEnabled = true;
+let chatEnabled = true; 
 
 module.exports.config = {
     name: "harold",
@@ -19,12 +19,12 @@ module.exports.run = async function ({ api, event, args }) {
     
     if (command === 'on') {
         chatEnabled = true;
-        return api.sendMessage("✅ | Harold is now ON", event.threadID, event.messageID);
+        return api.sendMessage("Harold is now ON", event.threadID, event.messageID);
     }
 
     if (command === 'off') {
         chatEnabled = false;
-        return api.sendMessage("✅ | Chatbot is now OFF", event.threadID, event.messageID);
+        return api.sendMessage("Harold is now OFF", event.threadID, event.messageID);
     }
 
     if (!chatEnabled) return; 
@@ -34,45 +34,43 @@ module.exports.run = async function ({ api, event, args }) {
     let apiUrl;
 
     if (!content) return api.sendMessage("Hello There I'm Harold Hutchins Chatbot made by Jonell Magallanes Haha", event.threadID, event.messageID);
-    
-    api.sendTypingIndicator(event.threadID);
+    api.setMessageReaction("💭", event.messageID, () => { }, true);
 
     apiUrl = `https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`;
 
     try {
         const response = await axios.get(apiUrl);
         const { response: reply } = response.data;  
-        api.sendMessage(reply, event.threadID, () => {
-            api.sendTypingIndicator(event.threadID, false); // Turn off typing indicator after sending message
-        });
+        api.setMessageReaction("💚", event.messageID, () => { }, true);
+        api.sendMessage(reply, event.threadID, event.messageID);
     } catch (error) {
         console.error(error);
         api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
+        api.setMessageReaction("😭", event.messageID, () => { }, true);
     }
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    if (!chatEnabled) return;
+    if (!chatEnabled) return; 
 
     if (event.body !== null && event.isGroup) {
         const content = encodeURIComponent(event.body);
         const id = event.senderID;  
         let apiUrl;
 
-        api.sendTypingIndicator(event.threadID);
+        api.setMessageReaction("💭", event.messageID, () => { }, true);
 
         apiUrl = `https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`;
 
         try {
             const response = await axios.get(apiUrl);
             const { response: reply } = response.data;  
-            api.sendMessage(reply, event.threadID, () => {
-                api.sendTypingIndicator(event.threadID, false); // Turn off typing indicator after sending message
-            });
+            api.setMessageReaction("💚", event.messageID, () => { }, true);
+            api.sendMessage(reply, event.threadID, event.messageID);
         } catch (error) {
             console.error(error);
-            api.sendMessage("❌ | Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
+            api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
+            api.setMessageReaction("😭", event.messageID, () => { }, true);
         }
     }
 };
-    
