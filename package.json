@@ -25,6 +25,7 @@
     "fs": "^0.0.1-security",
     "fs-extra": "^10.0.0",
     "google": "^2.1.0",
+    "prodia.js": "^3.0.0",
     "googleapis": "^128.0.0",
     "googlethis": "^1.8.0",
     "image-downloader": "^4.3.0",
