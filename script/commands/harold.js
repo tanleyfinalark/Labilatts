@@ -31,15 +31,12 @@ module.exports.run = async function ({ api, event, args }) {
 
     const content = encodeURIComponent(args.join(" "));
     const id = event.senderID;  
-    let apiUrl;
 
     if (!content) return api.sendMessage("Hello There I'm Harold Hutchins Chatbot made by Jonell Magallanes Haha", event.threadID, event.messageID);
     api.setMessageReaction("💭", event.messageID, () => { }, true);
 
-    apiUrl = `https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`;
-
     try {
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(`https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`);
         const { response: reply } = response.data;  
         api.setMessageReaction("💚", event.messageID, () => { }, true);
         api.sendMessage(reply, event.threadID, event.messageID);
@@ -51,26 +48,21 @@ module.exports.run = async function ({ api, event, args }) {
 };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    if (!chatEnabled) return; // Check if chatbot is enabled
+    if (!chatEnabled || !event.body || !event.isGroup) return; // Check if chatbot is enabled and if the event is valid
 
-    if (event.body !== null && event.isGroup) {
-        const content = encodeURIComponent(event.body);
-        const id = event.senderID;  
-        let apiUrl;
+    const content = encodeURIComponent(event.body);
+    const id = event.senderID;  
 
-        api.setMessageReaction("💭", event.messageID, () => { }, true);
+    api.setMessageReaction("💭", event.messageID, () => { }, true);
 
-        apiUrl = `https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`;
-
-        try {
-            const response = await axios.get(apiUrl);
-            const { response: reply } = response.data;  
-            api.setMessageReaction("💚", event.messageID, () => { }, true);
-            api.sendMessage(reply, event.threadID, event.messageID);
-        } catch (error) {
-            console.error(error);
-            api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
-            api.setMessageReaction("😭", event.messageID, () => { }, true);
-        }
+    try {
+        const response = await axios.get(`https://harolai-71030c5ce4eb.herokuapp.com/harold?ask=${content}&id=${id}`);
+        const { response: reply } = response.data;  
+        api.setMessageReaction("💚", event.messageID, () => { }, true);
+        api.sendMessage(reply, event.threadID, event.messageID);
+    } catch (error) {
+        console.error(error);
+        api.sendMessage("Nagkaroon ng Error Sa Main Server ng API Please Try Again Later or Contact the Developer Jonell Magallanes Thanks", event.threadID);
+        api.setMessageReaction("😭", event.messageID, () => { }, true);
     }
 };
