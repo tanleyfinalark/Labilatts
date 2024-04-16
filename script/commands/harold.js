@@ -1,6 +1,14 @@
 const axios = require('axios');
+const fs = require('fs');
 
 let chatEnabled = true; // Switch to control chatbot on/off
+
+// Load chatbot status from JSON file
+if (fs.existsSync('./chatbotStatus.json')) {
+    const rawData = fs.readFileSync('./chatbotStatus.json');
+    const jsonData = JSON.parse(rawData);
+    chatEnabled = jsonData.chatEnabled;
+}
 
 module.exports.config = {
     name: "harold",
@@ -14,16 +22,24 @@ module.exports.config = {
     cooldowns: 3
 };
 
+// Save chatbot status to JSON file
+function saveStatus() {
+    const jsonData = { chatEnabled };
+    fs.writeFileSync('./chatbotStatus.json', JSON.stringify(jsonData, null, 2));
+}
+
 module.exports.run = async function ({ api, event, args }) {
     const command = args[0];
     
     if (command === 'on') {
         chatEnabled = true;
+        saveStatus();
         return api.sendMessage("Chatbot is now ON", event.threadID, event.messageID);
     }
 
     if (command === 'off') {
         chatEnabled = false;
+        saveStatus();
         return api.sendMessage("Chatbot is now OFF", event.threadID, event.messageID);
     }
 
