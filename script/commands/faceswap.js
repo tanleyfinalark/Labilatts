@@ -1,59 +1,68 @@
-'use strict';
+const axios = require('axios');
+const fs = require('fs-extra');
 
 module.exports.config = {
-  name: "faceswap",
-  version: "1.0.0",
+  name: "swap",
+  version: "7.2",
   hasPermssion: 0,
-  credits: "josh", //convert by jonell as mirai form
-  description: "Generate image",
-  usePrefix: false,
-  usage: "[reply to a 2 image]",
-  commandCategory: "Just For fun",
+  credits: "Hazeyy",
+  description: "( 𝙵𝚊𝚌𝚎 𝚂𝚠𝚊𝚙 )",
+  usePrefix: true,
+  commandCategory: "𝚗𝚘 𝚙𝚛𝚎𝚏𝚒𝚡",
+  usages: "( 𝚂𝚠𝚊𝚙𝚙𝚒𝚗𝚐 𝙸𝚖𝚊𝚐𝚎𝚜/𝙵𝚊𝚌𝚎𝚜 )",
   cooldowns: 40,
 };
 
-module.exports.run = async function({ api, event }) {
-  try {
-    const { Prodia } = require("prodia.js");
-    const prodia = new Prodia("91838cb9-098c-4fa6-aac1-73eb4b3c88d7");
-    const axios = require("axios");
-    const fs = require('fs');
+module.exports.handleEvent = async function ({ api, event }) {
+  if (!(event.body.toLowerCase().startsWith("swap"))) return;
 
-    let url, url1;
+  const args = event.body.split(/\s+/);
+  args.shift(); 
 
-    if (event.type === "message_reply") {
-      if (event.messageReply.attachments.length === 0) return api.sendMessage("No image found.", event.threadID);
-      if (event.messageReply.attachments[0].type !== "photo") return api.sendMessage("Only image can be converted.", event.threadID);
-      
-      url = event.messageReply.attachments[0].url;
-      if (event.messageReply.attachments.length > 2) return api.sendMessage("Only 2 images can be converted.", event.threadID);
+  const reply = (message) => api.sendMessage(message, event.threadID, event.messageID);
 
-      url = event.messageReply.attachments[0].url;
-      url1 = event.messageReply.attachments[1].url;
+  if (event.type === "message_reply") {
+    const attachments = event.messageReply.attachments.filter(attachment => attachment.type === "photo");
 
-      api.sendMessage("Processing...", event.threadID);
+    if (attachments.length >= 2) {
+      const [url1, url2] = attachments.map(attachment => attachment.url);
+      const path = __dirname + `/cache/swapped_image.jpg`;
 
-      const generate = await prodia.faceSwap({
-        sourceUrl: encodeURI(url),
-        targetUrl: encodeURI(url1),
-      });
+      api.sendMessage("🔮 | 𝙿𝚕𝚎𝚊𝚜𝚎 𝚠𝚊𝚒𝚝 𝚠𝚑𝚒𝚕𝚎 𝚠𝚎 𝚜𝚠𝚊𝚙 𝚢𝚘𝚞𝚛 𝚒𝚖𝚊𝚐𝚎𝚜...", event.threadID, event.messageID);
 
-      while (generate.status !== "succeeded" && generate.status !== "failed") {
-        await new Promise(resolve => setTimeout(resolve, 250));
-        const job = await prodia.getJob(generate.job);
+      try {
+        const response = await axios.get('https://haze-faceswap.replit.app/swap', {
+          params: {
+            swap_image: url1,
+            target_image: url2
+          }
+        });
 
-        if (job.status === "succeeded") {
-          let img = (await axios.get(job.imageUrl, { responseType: "arraybuffer" })).data;
-          let path = __dirname + '/cache/gen.png';
+        const processedImageURL = response.data.hazeswap;
+        const { data } = await axios.get(processedImageURL, { responseType: "stream" });
 
-          fs.writeFileSync(path, Buffer.from(img, "utf-8"));
-          return api.sendMessage({ attachment: fs.createReadStream(path) }, event.threadID);
-        }
+        const writer = fs.createWriteStream(path);
+        data.pipe(writer);
+
+        writer.on('finish', () => {
+          api.sendMessage({
+            body: "🔮 𝙸𝚖𝚊𝚐𝚎 𝚂𝚠𝚊𝚙 𝚂𝚞𝚌𝚌𝚎𝚜𝚜𝚏𝚞𝚕𝚕𝚢",
+            attachment: fs.createReadStream(path)
+          }, event.threadID, (err, messageInfo) => {
+            if (err) {
+              reply("🤖 𝙴𝚛𝚛𝚘𝚛 𝚜𝚎𝚗𝚍𝚒𝚗𝚐 𝚖𝚎𝚜𝚜𝚊𝚐𝚎: " + err);
+            } else {
+              fs.unlinkSync(path);
+            }
+          });
+        });
+      } catch (error) {
+        reply(`🤖 𝙿𝚛𝚘𝚌𝚎𝚜𝚜𝚎𝚜𝚒𝚗𝚐 𝚒𝚖𝚊𝚐𝚎𝚜: ${error}`);
       }
     } else {
-      return api.sendMessage("Please reply to an image.", event.threadID);
+      reply("🔮 𝙵𝚊𝚌𝚎 𝚂𝚠𝚊𝚙\n\n𝚄𝚜𝚊𝚐𝚎: 𝚜𝚠𝚊𝚙 [ 𝚛𝚎𝚙𝚕𝚢 1 𝚊𝚗𝚍 2 𝚒𝚖𝚊𝚐𝚎 ]");
     }
-  } catch (e) {
-    return api.sendMessage(e.message, event.threadID);
   }
 };
+
+module.exports.run = async function({api, event}) {};
