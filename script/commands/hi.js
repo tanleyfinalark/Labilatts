@@ -4,6 +4,7 @@ module.exports.config = {
   hasPermssion: 0,
   credits: "zach",
   description: "hi",
+  usePrefix: true,
   commandCategory: "BOX",
   usages: "[text]",
   cooldowns: 5
