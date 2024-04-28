@@ -21,7 +21,7 @@ module.exports.run = async function ({ api, event, args }) {
     if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
 
     try {
-        const waitMessage = await api.sendMessage("Typing......", event.threadID);
+        api.sendMessage("Typing......", event.threadID);
 
         const response = await axios.get(apiUrl);
         const { response: result } = response.data;
@@ -29,7 +29,7 @@ module.exports.run = async function ({ api, event, args }) {
         const userNames = await getUserNames(api, event.senderID);
         const responseMessage = `${result}\n\n👤 𝖰𝗎𝖾𝗌𝗍𝗂𝗈𝗇 𝖠𝗌𝗄𝖾𝖽 𝖻𝗒: ${userNames.join(', ')}`;
 
-        api.editMessage(responseMessage, waitMessage.messageID, event.threadID);
+        api.sendMessage(responseMessage, event.threadID);
     } catch (error) {
         console.error(error);
         api.sendMessage("An error occurred while processing your request.", event.threadID);
