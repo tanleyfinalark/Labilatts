@@ -22,7 +22,7 @@ module.exports.run = async ({ api, event, args }) => {
     return;
   }
 
-  const apiUrl = `https://sim-api-by-jonell-magallanes.onrender.com/sim?query=${encodeURIComponent(message)}`;
+  const apiUrl = `https://sim-api-vtid.onrender.com/sim?query=${encodeURIComponent(message)}`;
 
   try {
     const response = await axios.get(apiUrl);
